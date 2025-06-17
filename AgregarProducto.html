@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Agregar Producto</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    #backgroundCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      pointer-events: none;
+      background: #0f2027;
+    }
+
+    body, html {
+      height: 100%;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+      color: #333;
+    }
+
+    .AddProductStyle {
+      position: relative;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 2.5em 2em;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+      width: 700px;
+    }
+
+    h2 {
+      margin-bottom: 1em;
+      font-size: 1.5em;
+      text-align: center;
+      color: #2a4365;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 1em;
+    }
+
+    .form-row input, .form-row select {
+      flex: 1;
+      padding: 0.75em;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1em;
+      transition: border-color 0.3s ease;
+    }
+
+    input:focus, select:focus {
+      border-color: #3182ce;
+      outline: none;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 1em;
+    }
+
+    button {
+      flex: 1;
+      padding: 0.75em;
+      font-size: 1em;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #Add {
+      background-color: #3182ce;
+      color: white;
+    }
+
+    #Add:hover {
+      background-color: #000000;
+    }
+
+    #Cancelar {
+      background-color: #ff4d4d;
+      color: white;
+    }
+
+    #Cancelar:hover {
+      background-color: #cc0000;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="AddProductStyle">
+    <h2>Registrar Producto</h2>
+    <form id="AddProduct">
+      <div class="form-row">
+        <input type="text" id="nombre" placeholder="Nombre del producto" required />
+        <input type="text" id="descripcion" placeholder="Descripción" required />
+      </div>
+      <div class="form-row">
+        <input type="text" id="modelo" placeholder="Modelo" />
+        <input type="text" id="marca" placeholder="Marca" />
+      </div>
+      <div class="form-row">
+        <input type="number" id="cantidad" placeholder="Cantidad" min="0" required />
+        <input type="number" id="precio" placeholder="Precio" step="0.01" min="0" required />
+      </div>
+      <div class="form-row">
+        <input type="text" id="ubicacion" placeholder="Ubicación" required />
+        <input type="date" id="fecha_ingreso" required />
+      </div>
+      <div class="form-row">
+        <input type="number" id="categoria_id" placeholder="ID de Categoría" required />
+      </div>
+      <div class="button-group">
+        <button type="submit" id="Add">Agregar Producto</button>
+        <button type="button" id="Cancelar">Cancelar</button>
+      </div>
+    </form>
+  </div>
+
+  <canvas id="backgroundCanvas"></canvas>
+
+  <script>
+    document.getElementById('Cancelar').addEventListener('click', function () {
+      window.location.href = 'Productos.html';
+    });
+
+    document.getElementById('AddProduct').addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const jefe_id = localStorage.getItem('jefe_id');
+      if (!jefe_id) {
+        alert('No hay sesión iniciada.');
+        window.location.href = 'Login.html';
+        return;
+      }
+
+      const producto = {
+        nombre: document.getElementById('nombre').value.trim(),
+        descripcion: document.getElementById('descripcion').value.trim(),
+        modelo: document.getElementById('modelo').value.trim(),
+        marca: document.getElementById('marca').value.trim(),
+        cantidad: parseInt(document.getElementById('cantidad').value),
+        precio: parseFloat(document.getElementById('precio').value),
+        ubicacion: document.getElementById('ubicacion').value.trim(),
+        fecha_ingreso: document.getElementById('fecha_ingreso').value,
+        categoria_id: parseInt(document.getElementById('categoria_id').value),
+        jefe_id: jefe_id
+      };
+
+      try {
+        const response = await fetch('http://localhost:3000/productos/registrar', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(producto)
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          window.location.href = 'Productos.html';
+        } else {
+          alert('Error: ' + (data.error || 'No se pudo agregar el producto.'));
+        }
+      } catch (err) {
+        console.error('Error al enviar:', err);
+        alert('Error de conexión con el servidor.');
+      }
+    });
+
+    // Canvas animado (igual que antes)
+    const canvas = document.getElementById('backgroundCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    class Shape {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.size = 50 + Math.random() * 80;
+        this.speedX = (Math.random() * 0.3 + 0.05) * (Math.random() < 0.5 ? 1 : -1);
+        this.speedY = (Math.random() * 0.2 + 0.03) * (Math.random() < 0.5 ? 1 : -1);
+        this.opacity = 0.05 + Math.random() * 0.15;
+        this.color = `rgba(0, 140, 186, ${this.opacity})`;
+        this.type = Math.floor(Math.random() * 3);
+        this.rotation = Math.random() * 2 * Math.PI;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.002;
+      }
+      draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        ctx.fillStyle = this.color;
+        switch (this.type) {
+          case 0:
+            ctx.beginPath();
+            ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
+            ctx.fill(); break;
+          case 1:
+            ctx.beginPath();
+            ctx.moveTo(0, -this.size / 1.5);
+            ctx.lineTo(this.size / 1.3, this.size / 2);
+            ctx.lineTo(-this.size / 1.3, this.size / 2);
+            ctx.closePath();
+            ctx.fill(); break;
+          case 2:
+            const r = this.size / 5;
+            ctx.beginPath();
+            ctx.moveTo(-this.size / 2 + r, -this.size / 2);
+            ctx.lineTo(this.size / 2 - r, -this.size / 2);
+            ctx.quadraticCurveTo(this.size / 2, -this.size / 2, this.size / 2, -this.size / 2 + r);
+            ctx.lineTo(this.size / 2, this.size / 2 - r);
+            ctx.quadraticCurveTo(this.size / 2, this.size / 2, this.size / 2 - r, this.size / 2);
+            ctx.lineTo(-this.size / 2 + r, this.size / 2);
+            ctx.quadraticCurveTo(-this.size / 2, this.size / 2, -this.size / 2, this.size / 2 - r);
+            ctx.lineTo(-this.size / 2, -this.size / 2 + r);
+            ctx.quadraticCurveTo(-this.size / 2, -this.size / 2, -this.size / 2 + r, -this.size / 2);
+            ctx.closePath();
+            ctx.fill(); break;
+        }
+        ctx.restore();
+      }
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.rotation += this.rotationSpeed;
+        if (this.x > width + this.size) this.x = -this.size;
+        else if (this.x < -this.size) this.x = width + this.size;
+        if (this.y > height + this.size) this.y = -this.size;
+        else if (this.y < -this.size) this.y = height + this.size;
+      }
+    }
+
+    const shapes = [];
+    for (let i = 0; i < 35; i++) shapes.push(new Shape());
+
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+      for (let shape of shapes) {
+        shape.update();
+        shape.draw(ctx);
+      }
+      requestAnimationFrame(animate);
+    }
+    animate();
+  </script>
+</body>
+</html>

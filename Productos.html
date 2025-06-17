@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Productos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+      position: relative;
+      z-index: 1;
+    }
+
+    nav {
+      background-color: #333;
+      padding: 1em;
+      position: relative;
+      z-index: 10;
+    }
+
+    nav a {
+      color: white;
+      margin-right: 15px;
+      text-decoration: none;
+    }
+
+    nav a:hover {
+      text-decoration: underline;
+      color: #1c80c8;
+    }
+
+    .container {
+      padding: 2em;
+      position: relative;
+      z-index: 10;
+    }
+
+    .encabezado {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1em;
+      flex-wrap: wrap;
+    }
+
+    .botonesDiv {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      display: flex;
+      gap: 15px;
+      z-index: 10;
+    }
+
+    .butons:hover {
+      background-color: #000000;
+    }
+
+    button {
+      padding: 10px 20px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1em;
+      transition: background-color 0.3s ease;
+      width: auto;
+    }
+
+    .cuadro-texto {
+      width: 100%;
+      max-width: 400px;
+      padding: 10px;
+      font-size: 16px;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1em;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      border-radius: 10px;
+      background-color: white;
+    }
+
+    th,
+    td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #e0e0e0;
+      text-align: left;
+      font-size: 0.95em;
+    }
+
+    th {
+      background-color: #4CAF50;
+      color: white;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    tbody tr:hover {
+      background-color: #e3f4ea;
+      transition: background-color 0.3s ease;
+    }
+
+    @media (max-width: 600px) {
+      .cuadro-texto {
+        width: 100%;
+      }
+
+      table,
+      thead,
+      tbody,
+      th,
+      td,
+      tr {
+        display: block;
+      }
+
+      th {
+        display: none;
+      }
+
+      td {
+        position: relative;
+        padding-left: 50%;
+        border: none;
+        border-bottom: 1px solid #ccc;
+      }
+
+      td::before {
+        position: absolute;
+        left: 10px;
+        top: 8px;
+        white-space: nowrap;
+        font-weight: bold;
+      }
+
+      td:nth-of-type(1)::before {
+        content: "Nombre";
+      }
+
+      td:nth-of-type(2)::before {
+        content: "Descripción";
+      }
+
+      td:nth-of-type(3)::before {
+        content: "Modelo";
+      }
+
+      td:nth-of-type(4)::before {
+        content: "Marca";
+      }
+
+      td:nth-of-type(5)::before {
+        content: "Cantidad";
+      }
+
+      td:nth-of-type(6)::before {
+        content: "Precio";
+      }
+
+      td:nth-of-type(7)::before {
+        content: "Ubicación";
+      }
+
+      td:nth-of-type(8)::before {
+        content: "Fecha Ingreso";
+      }
+
+      td:nth-of-type(9)::before {
+        content: "Categoría";
+      }
+    }
+
+    /* Fondo animado */
+    #backgroundCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0; /* detrás de todo */
+      pointer-events: none;
+      background: linear-gradient(135deg, #e0f7e9, #b2d8b2);
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav>
+    <a href="Dashboard.html">Inicio</a>
+    <a href="Clientes.html">Clientes</a>
+    <a href="Productos.html" id="Products">Productos</a>
+    <a href="Ventas.html">Ventas</a>
+    <a href="Login.html" id="logoutLink">Cerrar sesión</a>
+  </nav>
+
+  <div class="container">
+    <div class="encabezado">
+      <h1>Lista de Productos</h1>
+      <input type="text" id="filtroNombre" class="cuadro-texto" placeholder="Escribe un nombre de producto" />
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Descripción</th>
+          <th>Modelo</th>
+          <th>Marca</th>
+          <th>Cantidad</th>
+          <th>Precio</th>
+          <th>Ubicación</th>
+          <th>Fecha Ingreso</th>
+          <th>Categoría</th>
+        </tr>
+      </thead>
+      <tbody id="productosBody">
+        <!-- Los productos se cargan con JS -->
+      </tbody>
+    </table>
+  </div>
+
+  <div class="botonesDiv">
+    <button class="butons" id="Add">Agregar Producto</button>
+  </div>
+
+  <canvas id="backgroundCanvas"></canvas>
+
+  <script>
+    document.getElementById('Add').addEventListener('click', () => {
+      window.location.href = 'AgregarProducto.html';
+    });
+
+    const jefeId = localStorage.getItem('jefe_id');
+
+    if (!jefeId || jefeId.trim() === '') {
+      alert('No hay sesión iniciada. Por favor, inicia sesión.');
+      window.location.href = 'Login.html';
+    } else {
+      console.log('🔍 Cargando productos para jefe_id:', jefeId);
+      cargarProductos();
+    }
+
+    const tbody = document.getElementById('productosBody');
+    const filtroInput = document.getElementById('filtroNombre');
+    let productos = [];
+
+    function cargarProductos() {
+      fetch(`http://localhost:3000/productos?jefe_id=${jefeId}`)
+        .then(response => {
+          if (!response.ok) throw new Error('Error al obtener productos');
+          return response.json();
+        })
+        .then(data => {
+          productos = data;
+          mostrarProductos(productos);
+        })
+        .catch(error => {
+          console.error('❌ Error al cargar productos:', error);
+          alert('Hubo un error al cargar los productos.');
+        });
+    }
+
+    function mostrarProductos(filtrados) {
+      tbody.innerHTML = '';
+      filtrados.forEach(producto => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${producto.nombre}</td>
+          <td>${producto.descripcion}</td>
+          <td>${producto.modelo}</td>
+          <td>${producto.marca}</td>
+          <td>${producto.cantidad}</td>
+          <td>${producto.precio}</td>
+          <td>${producto.ubicacion}</td>
+          <td>${producto.fecha_ingreso}</td>
+          <td>${producto.categoria_nombre || producto.categoria_id}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    filtroInput.addEventListener('input', () => {
+      const texto = filtroInput.value.toLowerCase();
+      const filtrados = productos.filter(p => p.nombre.toLowerCase().includes(texto));
+      mostrarProductos(filtrados);
+    });
+
+    // Fondo animado
+    const canvas = document.getElementById('backgroundCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    class Particle {
+      constructor() {
+        this.reset();
+      }
+      reset() {
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.radius = 1 + Math.random() * 3;
+        this.speedX = (Math.random() - 0.5) * 0.4;
+        this.speedY = (Math.random() - 0.5) * 0.4;
+        this.alpha = 0.1 + Math.random() * 0.3;
+      }
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+
+        if (this.x < 0 || this.x > width) this.speedX *= -1;
+        if (this.y < 0 || this.y > height) this.speedY *= -1;
+      }
+      draw(ctx) {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
+        ctx.fillStyle = `rgba(76, 175, 80, ${this.alpha})`; // verde suave
+        ctx.fill();
+      }
+    }
+
+    const particles = [];
+    const maxParticles = 100;
+
+    for (let i = 0; i < maxParticles; i++) {
+      particles.push(new Particle());
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+
+      // Dibujar líneas entre partículas cercanas
+      for (let i = 0; i < maxParticles; i++) {
+        const p1 = particles[i];
+        p1.update();
+        p1.draw(ctx);
+
+        for (let j = i + 1; j < maxParticles; j++) {
+          const p2 = particles[j];
+          const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+          if (dist < 120) {
+            ctx.strokeStyle = `rgba(76, 175, 80, ${(120 - dist) / 300})`;
+            ctx.lineWidth = 0.7;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+
+</body>
+
+</html>
