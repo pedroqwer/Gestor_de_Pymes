@@ -165,7 +165,7 @@
         <thead>
           <tr>
             <th>Nombre</th>
-            <th>Precio</th>
+            <th>Precio Venta</th>
             <th>Acción</th>
           </tr>
         </thead>
@@ -188,157 +188,189 @@
   <!-- Importamos jsPDF desde CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   
-  <script>
-    const { jsPDF } = window.jspdf;
+ <script>
+  const { jsPDF } = window.jspdf;
 
-    const productTable = document.getElementById("productTable");
-    const cartList = document.getElementById("cartList");
-    const searchInput = document.getElementById("searchInput");
-    const carrito = [];
-    let productosGlobal = [];
-    let clientesGlobal = [];
+  const productTable = document.getElementById("productTable");
+  const cartList = document.getElementById("cartList");
+  const searchInput = document.getElementById("searchInput");
+  const carrito = [];
+  let productosGlobal = [];
+  let clientesGlobal = [];
 
-    const jefeId = localStorage.getItem('jefe_id');
+  const jefeId = localStorage.getItem('jefe_id');
 
-    if (!jefeId) {
-      alert("No has iniciado sesión.");
-      window.location.href = "Login.html";
+  if (!jefeId) {
+    alert("No has iniciado sesión.");
+    window.location.href = "Login.html";
+  }
+
+  async function obtenerProductos() {
+    try {
+      const res = await fetch(`http://localhost:3000/productos/venta?jefe_id=${jefeId}`);
+      const productos = await res.json();
+      productosGlobal = productos; // Guardamos para buscar
+      renderProductos(productosGlobal);
+    } catch (error) {
+      console.error("Error al obtener productos:", error);
+      alert("Error al cargar productos.");
     }
+  }
 
-    async function obtenerProductos() {
-      try {
-        const res = await fetch(`http://localhost:3000/productos?jefe_id=${jefeId}`);
-        const productos = await res.json();
-        productosGlobal = productos; // Guardamos para buscar
-        renderProductos(productosGlobal);
-      } catch (error) {
-        console.error("Error al obtener productos:", error);
-        alert("Error al cargar productos.");
-      }
+  async function obtenerClientes() {
+    try {
+      const res = await fetch(`http://localhost:3000/clientes?jefe_id=${jefeId}`);
+      clientesGlobal = await res.json();
+    } catch (error) {
+      console.error("Error al obtener clientes:", error);
+      alert("No se pudieron cargar los clientes.");
     }
+  }
 
-    async function obtenerClientes() {
-      try {
-        const res = await fetch(`http://localhost:3000/clientes?jefe_id=${jefeId}`);
-        clientesGlobal = await res.json();
-      } catch (error) {
-        console.error("Error al obtener clientes:", error);
-        alert("No se pudieron cargar los clientes.");
-      }
-    }
-
-    function renderProductos(productos) {
-      productTable.innerHTML = "";
-      productos.forEach(producto => {
-        const fila = document.createElement("tr");
-        fila.innerHTML = `
-          <td>${producto.nombre}</td>
-          <td>$${parseFloat(producto.precio).toFixed(2)}</td>
-          <td><button onclick="agregarAlCarrito(${producto.id}, '${producto.nombre}', ${producto.precio})">Agregar</button></td>
-        `;
-        productTable.appendChild(fila);
-      });
-    }
-
-    searchInput.addEventListener("input", () => {
-      const filtro = searchInput.value.toLowerCase();
-      const filtrados = productosGlobal.filter(p => p.nombre.toLowerCase().includes(filtro));
-      renderProductos(filtrados);
+  function renderProductos(productos) {
+    productTable.innerHTML = "";
+    productos.forEach(producto => {
+      const fila = document.createElement("tr");
+      fila.innerHTML = `
+        <td>${producto.nombre}</td>
+        <td>$${parseFloat(producto.precio_venta).toFixed(2)}</td>
+        <td><button onclick="agregarAlCarrito(${producto.id}, '${producto.nombre}', ${producto.precio_venta})">Agregar</button></td>
+      `;
+      productTable.appendChild(fila);
     });
+  }
 
-    function agregarAlCarrito(id, nombre, precio) {
-      const index = carrito.findIndex(item => item.id === id);
-      if (index !== -1) {
-        carrito[index].cantidad++;
-      } else {
-        carrito.push({ id, nombre, precio, cantidad: 1 });
-      }
-      renderCarrito();
-    }
+  searchInput.addEventListener("input", () => {
+    const filtro = searchInput.value.toLowerCase();
+    const filtrados = productosGlobal.filter(p => p.nombre.toLowerCase().includes(filtro));
+    renderProductos(filtrados);
+  });
 
-    function eliminarDelCarrito(index) {
-      carrito.splice(index, 1);
-      renderCarrito();
-    }
+ function agregarAlCarrito(id, nombre, precio_venta) {
+  const index = carrito.findIndex(item => item.id === id);
+  if (index !== -1) {
+    carrito[index].cantidad++;
+  } else {
+    carrito.push({ id, nombre, precio: precio_venta, cantidad: 1 }); // Nota: campo precio, no precio_venta
+  }
+  renderCarrito();
+}
+  function eliminarDelCarrito(index) {
+    carrito.splice(index, 1);
+    renderCarrito();
+  }
 
-    function renderCarrito() {
-      cartList.innerHTML = "";
-      carrito.forEach((producto, index) => {
-        const item = document.createElement("div");
-        item.className = "cart-item";
-        item.innerHTML = `
-          <span>${producto.nombre} - $${producto.precio.toFixed(2)} x ${producto.cantidad} = $${(producto.precio * producto.cantidad).toFixed(2)}</span>
-          <button onclick="eliminarDelCarrito(${index})">Eliminar</button>
-        `;
-        cartList.appendChild(item);
-      });
-    }
+ function renderCarrito() {
+  cartList.innerHTML = "";
+  carrito.forEach((producto, index) => {
+    const item = document.createElement("div");
+    item.className = "cart-item";
+    item.innerHTML = `
+      <span>${producto.nombre} - $${producto.precio.toFixed(2)} x ${producto.cantidad} = $${(producto.precio * producto.cantidad).toFixed(2)}</span>
+      <button onclick="eliminarDelCarrito(${index})">Eliminar</button>
+    `;
+    cartList.appendChild(item);
+  });
+}
 
-    function seleccionarCliente() {
-      return new Promise((resolve, reject) => {
-        if (clientesGlobal.length === 0) {
-          alert("No hay clientes registrados.");
-          resolve(null);
-          return;
-        }
-
-        const overlay = document.createElement("div");
-        overlay.style = `
-          position: fixed; top:0; left:0; width: 100vw; height: 100vh;
-          background: rgba(0,0,0,0.5);
-          display: flex; justify-content: center; align-items: center;
-          z-index: 9999;
-        `;
-
-        const modal = document.createElement("div");
-        modal.style = `
-          background: white; padding: 20px; border-radius: 10px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-          width: 300px;
-          text-align: center;
-          font-family: 'Segoe UI', sans-serif;
-        `;
-
-        modal.innerHTML = `
-          <h3>Selecciona un cliente</h3>
-          <select id="clienteSelect" style="width: 100%; padding: 8px; margin: 15px 0;">
-            ${clientesGlobal.map(c => `<option value="${c.nombre}">${c.nombre}</option>`).join('')}
-          </select>
-          <div>
-            <button id="btnAceptar" style="padding: 8px 12px; margin-right: 10px;">Aceptar</button>
-            <button id="btnCancelar" style="padding: 8px 12px;">Cancelar</button>
-          </div>
-        `;
-
-        overlay.appendChild(modal);
-        document.body.appendChild(overlay);
-
-        document.getElementById("btnAceptar").onclick = () => {
-          const select = document.getElementById("clienteSelect");
-          const clienteSeleccionado = select.value;
-          document.body.removeChild(overlay);
-          resolve(clienteSeleccionado);
-        };
-
-        document.getElementById("btnCancelar").onclick = () => {
-          document.body.removeChild(overlay);
-          resolve(null);
-        };
-      });
-    }
-
-    async function generarFactura() {
-      if (carrito.length === 0) {
-        alert("El carrito está vacío. Agrega productos para generar la factura.");
+  function seleccionarCliente() {
+    return new Promise((resolve) => {
+      if (clientesGlobal.length === 0) {
+        alert("No hay clientes registrados.");
+        resolve(null);
         return;
       }
 
-      const cliente = await seleccionarCliente();
+      const overlay = document.createElement("div");
+      overlay.style = `
+        position: fixed; top:0; left:0; width: 100vw; height: 100vh;
+        background: rgba(0,0,0,0.5);
+        display: flex; justify-content: center; align-items: center;
+        z-index: 9999;
+      `;
 
-      if (!cliente) {
-        alert("Debe seleccionar un cliente válido.");
+      const modal = document.createElement("div");
+      modal.style = `
+        background: white; padding: 20px; border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        width: 300px;
+        text-align: center;
+        font-family: 'Segoe UI', sans-serif;
+      `;
+
+      modal.innerHTML = `
+        <h3>Selecciona un cliente</h3>
+        <select id="clienteSelect" style="width: 100%; padding: 8px; margin: 15px 0;">
+          ${clientesGlobal.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('')}
+        </select>
+        <div>
+          <button id="btnAceptar" style="padding: 8px 12px; margin-right: 10px;">Aceptar</button>
+          <button id="btnCancelar" style="padding: 8px 12px;">Cancelar</button>
+        </div>
+      `;
+
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+
+      document.getElementById("btnAceptar").onclick = () => {
+        const select = document.getElementById("clienteSelect");
+        const clienteId = parseInt(select.value);
+        document.body.removeChild(overlay);
+        resolve(clienteId);
+      };
+
+      document.getElementById("btnCancelar").onclick = () => {
+        document.body.removeChild(overlay);
+        resolve(null);
+      };
+    });
+  }
+
+  async function generarFactura() {
+    if (carrito.length === 0) {
+      alert("El carrito está vacío. Agrega productos para generar la factura.");
+      return;
+    }
+
+    const clienteId = await seleccionarCliente();
+
+    if (!clienteId) {
+      alert("Debe seleccionar un cliente válido.");
+      return;
+    }
+
+    // Preparar datos para enviar la venta
+    const productosParaVenta = carrito.map(p => ({
+      id: p.id,
+      cantidad: p.cantidad,
+      precio: p.precio
+    }));
+
+    const venta = {
+      cliente_id: clienteId,
+      jefe_id: jefeId,
+      productos: productosParaVenta
+    };
+
+    try {
+      const res = await fetch("http://localhost:3000/ventas/registrar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(venta)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert("Error al registrar la venta: " + (data.error || 'Error desconocido'));
         return;
       }
+
+      // Venta registrada, ahora generamos la factura PDF
+      const clienteObj = clientesGlobal.find(c => c.id === clienteId);
+      const clienteNombre = clienteObj ? clienteObj.nombre : "Cliente";
 
       const doc = new jsPDF();
 
@@ -347,7 +379,7 @@
       doc.text("Factura de Venta", 105, 20, null, null, "center");
 
       doc.setFontSize(12);
-      doc.text(`Cliente: ${cliente}`, 14, 30);
+      doc.text(`Cliente: ${clienteNombre}`, 14, 30);
       const fecha = new Date().toLocaleDateString();
       doc.text(`Fecha: ${fecha}`, 150, 30);
 
@@ -392,13 +424,24 @@
       doc.text(`TOTAL: $${total.toFixed(2)}`, 150, startY);
 
       // Guardar PDF
-      doc.save(`Factura_${cliente.replace(/\s+/g, '_')}.pdf`);
-    }
+      doc.save(`Factura_${clienteNombre.replace(/\s+/g, '_')}.pdf`);
 
-    // Inicializar productos y clientes al cargar
-    obtenerProductos();
-    obtenerClientes();
-  </script>
+      // Vaciar carrito y actualizar UI
+      carrito.length = 0;
+      renderCarrito();
+
+
+    } catch (error) {
+      console.error("Error al registrar venta:", error);
+      alert("Error al registrar la venta.");
+    }
+  }
+
+  // Inicializar productos y clientes al cargar
+  obtenerProductos();
+  obtenerClientes();
+</script>
+
 
 </body>
 </html>

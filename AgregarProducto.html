@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -22,7 +23,8 @@
       background: #0f2027;
     }
 
-    body, html {
+    body,
+    html {
       height: 100%;
       font-family: 'Segoe UI', sans-serif;
       display: flex;
@@ -40,7 +42,8 @@
       padding: 2.5em 2em;
       border-radius: 12px;
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-      width: 700px;
+      width: 720px;
+      max-width: 90%;
     }
 
     h2 {
@@ -54,10 +57,12 @@
       display: flex;
       gap: 20px;
       margin-bottom: 1em;
+      flex-wrap: wrap;
     }
 
-    .form-row input, .form-row select {
-      flex: 1;
+    .form-row input,
+    .form-row select {
+      flex: 1 1 48%;
       padding: 0.75em;
       border: 1px solid #ccc;
       border-radius: 8px;
@@ -65,7 +70,8 @@
       transition: border-color 0.3s ease;
     }
 
-    input:focus, select:focus {
+    input:focus,
+    select:focus {
       border-color: #3182ce;
       outline: none;
     }
@@ -105,29 +111,33 @@
     }
   </style>
 </head>
+
 <body>
 
   <div class="AddProductStyle">
     <h2>Registrar Producto</h2>
     <form id="AddProduct">
       <div class="form-row">
-        <input type="text" id="nombre" placeholder="Nombre del producto" required />
-        <input type="text" id="descripcion" placeholder="Descripción" required />
+        <input type="text" id="nombre" name="nombre" placeholder="Nombre del producto" required />
+        <input type="text" id="descripcion" name="descripcion" placeholder="Descripción" required />
       </div>
       <div class="form-row">
-        <input type="text" id="modelo" placeholder="Modelo" />
-        <input type="text" id="marca" placeholder="Marca" />
+        <input type="text" id="modelo" name="modelo" placeholder="Modelo" />
+        <input type="text" id="marca" name="marca" placeholder="Marca" />
       </div>
       <div class="form-row">
-        <input type="number" id="cantidad" placeholder="Cantidad" min="0" required />
-        <input type="number" id="precio" placeholder="Precio" step="0.01" min="0" required />
+        <input type="number" id="cantidad" name="cantidad" placeholder="Cantidad" min="0" required />
+        <input type="text" id="ubicacion" name="ubicacion" placeholder="Ubicación" required />
       </div>
       <div class="form-row">
-        <input type="text" id="ubicacion" placeholder="Ubicación" required />
-        <input type="date" id="fecha_ingreso" required />
+        <input type="number" id="precio_compra" name="precio_compra" placeholder="Precio de compra" min="0" step="0.01"
+          required />
+        <input type="number" id="precio_venta" name="precio_venta" placeholder="Precio de venta" min="0" step="0.01"
+          required />
       </div>
       <div class="form-row">
-        <input type="number" id="categoria_id" placeholder="ID de Categoría" required />
+        <input type="date" id="fecha_ingreso" name="fecha_ingreso" required />
+        <input type="text" id="categoria_nombre" name="categoria_nombre" placeholder="Categoría" required />
       </div>
       <div class="button-group">
         <button type="submit" id="Add">Agregar Producto</button>
@@ -154,30 +164,31 @@
       }
 
       const producto = {
-        nombre: document.getElementById('nombre').value.trim(),
-        descripcion: document.getElementById('descripcion').value.trim(),
-        modelo: document.getElementById('modelo').value.trim(),
-        marca: document.getElementById('marca').value.trim(),
-        cantidad: parseInt(document.getElementById('cantidad').value),
-        precio: parseFloat(document.getElementById('precio').value),
-        ubicacion: document.getElementById('ubicacion').value.trim(),
-        fecha_ingreso: document.getElementById('fecha_ingreso').value,
-        categoria_id: parseInt(document.getElementById('categoria_id').value),
+        nombre: nombre.value.trim(),
+        descripcion: descripcion.value.trim(),
+        modelo: modelo.value.trim(),
+        marca: marca.value.trim(),
+        cantidad: parseInt(cantidad.value),
+        ubicacion: ubicacion.value.trim(),
+        precio_compra: parseFloat(precio_compra.value),
+        precio_venta: parseFloat(precio_venta.value),
+        fecha_ingreso: fecha_ingreso.value,
+        categoria_nombre: categoria_nombre.value.trim(), // ✅ Este es el correcto
         jefe_id: jefe_id
       };
+
 
       try {
         const response = await fetch('http://localhost:3000/productos/registrar', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(producto)
         });
 
         const data = await response.json();
 
         if (response.ok) {
+          alert('Producto registrado con éxito.');
           window.location.href = 'Productos.html';
         } else {
           alert('Error: ' + (data.error || 'No se pudo agregar el producto.'));
@@ -188,7 +199,7 @@
       }
     });
 
-    // Canvas animado (igual que antes)
+    // Fondo animado
     const canvas = document.getElementById('backgroundCanvas');
     const ctx = canvas.getContext('2d');
     let width, height;
@@ -222,18 +233,18 @@
         ctx.rotate(this.rotation);
         ctx.fillStyle = this.color;
         switch (this.type) {
-          case 0:
+          case 0: // Círculo
             ctx.beginPath();
             ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
             ctx.fill(); break;
-          case 1:
+          case 1: // Triángulo
             ctx.beginPath();
             ctx.moveTo(0, -this.size / 1.5);
             ctx.lineTo(this.size / 1.3, this.size / 2);
             ctx.lineTo(-this.size / 1.3, this.size / 2);
             ctx.closePath();
             ctx.fill(); break;
-          case 2:
+          case 2: // Rectángulo redondeado
             const r = this.size / 5;
             ctx.beginPath();
             ctx.moveTo(-this.size / 2 + r, -this.size / 2);
@@ -261,18 +272,19 @@
       }
     }
 
-    const shapes = [];
-    for (let i = 0; i < 35; i++) shapes.push(new Shape());
+    const shapes = Array.from({ length: 35 }, () => new Shape());
 
     function animate() {
       ctx.clearRect(0, 0, width, height);
-      for (let shape of shapes) {
+      shapes.forEach(shape => {
         shape.update();
         shape.draw(ctx);
-      }
+      });
       requestAnimationFrame(animate);
     }
+
     animate();
   </script>
 </body>
+
 </html>

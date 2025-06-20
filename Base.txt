@@ -10,13 +10,10 @@ CREATE TABLE jefe (
 -- Tabla: categorias
 CREATE TABLE categorias (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(50) NOT NULL,
-    descripcion TEXT,
-    jefe_id INT,
-    FOREIGN KEY (jefe_id) REFERENCES jefe(id)
+    nombre VARCHAR(50) NOT NULL
 );
 
--- Tabla: productos
+-- Tabla: productos (actualizada)
 CREATE TABLE productos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
@@ -24,7 +21,8 @@ CREATE TABLE productos (
     modelo VARCHAR(50),
     marca VARCHAR(50),
     cantidad INT DEFAULT 0,
-    precio DECIMAL(10,2),
+    precio_compra DECIMAL(10,2),  -- precio promedio o base de compra
+    precio_venta DECIMAL(10,2),   -- precio de venta al cliente
     ubicacion VARCHAR(100),
     fecha_ingreso DATE DEFAULT CURRENT_DATE,
     categoria_id INT,
@@ -32,6 +30,7 @@ CREATE TABLE productos (
     FOREIGN KEY (categoria_id) REFERENCES categorias(id),
     FOREIGN KEY (jefe_id) REFERENCES jefe(id)
 );
+
 
 -- Tabla: proveedores
 CREATE TABLE proveedores (
@@ -45,11 +44,12 @@ CREATE TABLE proveedores (
     FOREIGN KEY (jefe_id) REFERENCES jefe(id)
 );
 
--- Tabla: entradas
+-- Tabla: entradas (actualizada)
 CREATE TABLE entradas (
     id INT AUTO_INCREMENT PRIMARY KEY,
     producto_id INT,
     cantidad INT NOT NULL,
+    precio_compra DECIMAL(10,2) NOT NULL,  -- precio al que el proveedor cobra el producto
     fecha DATE DEFAULT CURRENT_DATE,
     proveedor_id INT,
     jefe_id INT,
