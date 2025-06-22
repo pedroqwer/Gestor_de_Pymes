@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Proveedores - Enviar Correo</title>
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+  <style>
+    body { font-family: sans-serif; background: #f5f5f5; padding: 20px; }
+    h1 { text-align: center; }
+    ul { max-width: 600px; margin: auto; padding: 0; list-style: none; }
+    li {
+      background: white;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    li:hover { background: #e0f0ff; }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 450px;
+      position: relative;
+    }
+
+    .close {
+      position: absolute;
+      top: 10px; right: 15px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    input, textarea, button {
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      margin-top: 15px;
+      cursor: pointer;
+    }
+
+    button:hover { background: #0056b3; }
+  </style>
+</head>
+<body>
+
+<h1>Proveedores</h1>
+<ul id="personList">
+  <li data-email="sanchezpere80@gmail.com" data-nombre="Distribuidora Norte S.A.">
+    <strong>Distribuidora Norte S.A.</strong><br>
+    Productos: Bebidas<br>
+    Tel: 1234-5678
+  </li>
+  <li data-email="proveedor2@empresa.com" data-nombre="Alimentos del Sur Ltda.">
+    <strong>Alimentos del Sur Ltda.</strong><br>
+    Productos: Alimentos secos<br>
+    Tel: 8765-4321
+  </li>
+</ul>
+
+<div class="modal" id="emailModal">
+  <div class="modal-content">
+    <span class="close" id="closeModal">&times;</span>
+    <h2>Enviar Correo</h2>
+    <form id="emailForm">
+      <input type="text" id="toEmail" name="toEmail" placeholder="Para" readonly />
+      <input type="text" id="subject" name="subject" placeholder="Asunto" required />
+      <textarea id="message" name="message" placeholder="Mensaje" rows="6" required></textarea>
+      <button type="submit">Enviar</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Inicializar EmailJS
+  emailjs.init("4ZMuqcDKV2gtjpR2f"); // ← Reemplaza con tu Public Key
+
+  const personList = document.getElementById('personList');
+  const modal = document.getElementById('emailModal');
+  const closeModal = document.getElementById('closeModal');
+  const toEmailInput = document.getElementById('toEmail');
+  const subjectInput = document.getElementById('subject');
+  const messageInput = document.getElementById('message');
+  const emailForm = document.getElementById('emailForm');
+
+  personList.addEventListener('click', (e) => {
+    const li = e.target.closest('li');
+    if (!li) return;
+
+    const email = li.getAttribute('data-email');
+    const nombre = li.getAttribute('data-nombre');
+
+    toEmailInput.value = email;
+    subjectInput.value = `Nuevo pedido para ${nombre}`;
+    messageInput.value = `Estimado/a ${nombre},\n\nQuisiera realizar un nuevo pedido. Por favor, indíqueme disponibilidad.\n\nGracias.`;
+
+    modal.style.display = 'flex';
+  });
+
+  closeModal.addEventListener('click', () => {
+    modal.style.display = 'none';
+    emailForm.reset();
+  });
+
+  window.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.style.display = 'none';
+      emailForm.reset();
+    }
+  });
+
+  emailForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+
+    emailjs.send("service_jsbxuvj", "template_twionns", {
+      to_email: toEmailInput.value,
+      subject: subjectInput.value,
+      message: messageInput.value,
+    })
+    .then(() => {
+      alert("Correo enviado correctamente.");
+      modal.style.display = 'none';
+      emailForm.reset();
+    })
+    .catch((error) => {
+      console.error("Error al enviar:", error);
+      alert("Error al enviar el correo.");
+    });
+  });
+</script>
+
+</body>
+</html>

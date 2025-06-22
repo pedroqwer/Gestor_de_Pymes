@@ -94,7 +94,30 @@ app.get('/productos/venta', (req, res) => {
   });
 });
 
+app.put('/productos/actualizar-cantidad', (req, res) => {
+  const { producto_id, cantidad, jefe_id } = req.body;
 
+  if (!producto_id || cantidad == null || !jefe_id) {
+    return res.status(400).json({ error: 'Faltan campos obligatorios' });
+  }
+
+  const query = `UPDATE productos SET cantidad = ? WHERE id = ? AND jefe_id = ?`;
+
+  connection.query(query, [cantidad, producto_id, jefe_id], (err, result) => {
+    if (err) {
+      console.error('Error al actualizar cantidad:', err);
+      return res.status(500).json({ error: 'Error al actualizar cantidad del producto' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+
+    res.json({ message: 'Cantidad actualizada correctamente' });
+  });
+});
+
+/*
 // Registrar nuevo producto (con manejo de categoría por nombre)
 app.post('/productos/registrar', (req, res) => {
   const {
@@ -103,9 +126,10 @@ app.post('/productos/registrar', (req, res) => {
     categoria_nombre, jefe_id
   } = req.body;
 
-  /*if (!nombre || !descripcion || !cantidad || !precio_compra || !precio_venta || !ubicacion || !fecha_ingreso || !categoria_nombre || !jefe_id) {
+  if (!nombre || !descripcion || !cantidad || !precio_compra || !precio_venta || !ubicacion || !fecha_ingreso || !categoria_nombre || !jefe_id) {
     return res.status(400).json({ error: 'Todos los campos requeridos deben ser completados.' });
-  }*/
+  }
+    
 
   // Paso 1: Buscar o crear categoría
   const buscarOCrearCategoria = () => {
@@ -155,7 +179,7 @@ app.post('/productos/registrar', (req, res) => {
       console.error('Error al manejar categoría:', err);
       res.status(500).json({ error: 'Error al procesar la categoría.' });
     });
-});
+});*/
 
 
 // Registrar entrada

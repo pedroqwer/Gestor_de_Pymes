@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Agregar Producto</title>
+  <title>Modificar Cantidad</title>
   <style>
     * {
       margin: 0;
@@ -35,14 +35,14 @@
       color: #333;
     }
 
-    .AddProductStyle {
+    .UpdateQuantityStyle {
       position: relative;
       z-index: 10;
       background: rgba(255, 255, 255, 0.95);
       padding: 2.5em 2em;
       border-radius: 12px;
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-      width: 720px;
+      width: 500px;
       max-width: 90%;
     }
 
@@ -55,14 +55,13 @@
 
     .form-row {
       display: flex;
-      gap: 20px;
+      flex-direction: column;
+      gap: 15px;
       margin-bottom: 1em;
-      flex-wrap: wrap;
     }
 
-    .form-row input,
-    .form-row select {
-      flex: 1 1 48%;
+    select,
+    input {
       padding: 0.75em;
       border: 1px solid #ccc;
       border-radius: 8px;
@@ -92,12 +91,12 @@
       transition: background-color 0.3s ease;
     }
 
-    #Add {
+    #Update {
       background-color: #3182ce;
       color: white;
     }
 
-    #Add:hover {
+    #Update:hover {
       background-color: #000000;
     }
 
@@ -113,34 +112,17 @@
 </head>
 
 <body>
-
-  <div class="AddProductStyle">
-    <h2>Registrar Producto</h2>
-    <form id="AddProduct">
+  <div class="UpdateQuantityStyle">
+    <h2>Modificar Cantidad del Producto</h2>
+    <form id="UpdateQuantityForm">
       <div class="form-row">
-        <input type="text" id="nombre" name="nombre" placeholder="Nombre del producto" required />
-        <input type="text" id="descripcion" name="descripcion" placeholder="Descripción" required />
-      </div>
-      <div class="form-row">
-        <input type="text" id="modelo" name="modelo" placeholder="Modelo" />
-        <input type="text" id="marca" name="marca" placeholder="Marca" />
-      </div>
-      <div class="form-row">
-        <input type="number" id="cantidad" name="cantidad" placeholder="Cantidad" min="0" required />
-        <input type="text" id="ubicacion" name="ubicacion" placeholder="Ubicación" required />
-      </div>
-      <div class="form-row">
-        <input type="number" id="precio_compra" name="precio_compra" placeholder="Precio de compra" min="0" step="0.01"
-          required />
-        <input type="number" id="precio_venta" name="precio_venta" placeholder="Precio de venta" min="0" step="0.01"
-          required />
-      </div>
-      <div class="form-row">
-        <input type="date" id="fecha_ingreso" name="fecha_ingreso" required />
-        <input type="text" id="categoria_nombre" name="categoria_nombre" placeholder="Categoría" required />
+        <select id="producto_id" required>
+          <option value="">Seleccione un producto</option>
+        </select>
+        <input type="number" id="nueva_cantidad" placeholder="Nueva cantidad" min="0" required />
       </div>
       <div class="button-group">
-        <button type="submit" id="Add">Agregar Producto</button>
+        <button type="submit" id="Update">Actualizar Cantidad</button>
         <button type="button" id="Cancelar">Cancelar</button>
       </div>
     </form>
@@ -149,57 +131,70 @@
   <canvas id="backgroundCanvas"></canvas>
 
   <script>
-    document.getElementById('Cancelar').addEventListener('click', function () {
-      window.location.href = 'Productos.html';
-    });
+    const jefe_id = localStorage.getItem('jefe_id');
 
-    document.getElementById('AddProduct').addEventListener('submit', async function (e) {
+    if (!jefe_id) {
+      alert('No hay sesión iniciada.');
+      window.location.href = 'Login.html';
+    }
+
+    const productoSelect = document.getElementById('producto_id');
+
+    // Obtener productos del jefe
+    async function cargarProductos() {
+      try {
+        const res = await fetch(`http://localhost:3000/productos?jefe_id=${jefe_id}`);
+        const productos = await res.json();
+
+        productos.forEach(p => {
+          const option = document.createElement('option');
+          option.value = p.id;
+          option.textContent = `${p.nombre} (${p.descripcion})`;
+          productoSelect.appendChild(option);
+        });
+      } catch (err) {
+        alert('Error al cargar productos');
+      }
+    }
+
+    cargarProductos();
+
+    // Formulario de actualización
+    document.getElementById('UpdateQuantityForm').addEventListener('submit', async function (e) {
       e.preventDefault();
 
-      const jefe_id = localStorage.getItem('jefe_id');
-      if (!jefe_id) {
-        alert('No hay sesión iniciada.');
-        window.location.href = 'Login.html';
-        return;
+      const producto_id = productoSelect.value;
+      const cantidad = parseInt(document.getElementById('nueva_cantidad').value);
+
+      if (!producto_id || isNaN(cantidad)) {
+        return alert('Por favor seleccione un producto y cantidad válida');
       }
 
-      const producto = {
-        nombre: nombre.value.trim(),
-        descripcion: descripcion.value.trim(),
-        modelo: modelo.value.trim(),
-        marca: marca.value.trim(),
-        cantidad: parseInt(cantidad.value),
-        ubicacion: ubicacion.value.trim(),
-        precio_compra: parseFloat(precio_compra.value),
-        precio_venta: parseFloat(precio_venta.value),
-        fecha_ingreso: fecha_ingreso.value,
-        categoria_nombre: categoria_nombre.value.trim(), // ✅ Este es el correcto
-        jefe_id: jefe_id
-      };
-
-
       try {
-        const response = await fetch('http://localhost:3000/productos/registrar', {
-          method: 'POST',
+        const res = await fetch('http://localhost:3000/productos/actualizar-cantidad', {
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(producto)
+          body: JSON.stringify({ producto_id, cantidad, jefe_id })
         });
 
-        const data = await response.json();
+        const data = await res.json();
 
-        if (response.ok) {
-          alert('Producto registrado con éxito.');
+        if (res.ok) {
+          alert('Cantidad actualizada con éxito.');
           window.location.href = 'Productos.html';
         } else {
-          alert('Error: ' + (data.error || 'No se pudo agregar el producto.'));
+          alert('Error: ' + (data.error || 'No se pudo actualizar.'));
         }
       } catch (err) {
-        console.error('Error al enviar:', err);
         alert('Error de conexión con el servidor.');
       }
     });
 
-    // Fondo animado
+    document.getElementById('Cancelar').addEventListener('click', function () {
+      window.location.href = 'Productos.html';
+    });
+
+    // Fondo animado (igual que antes)
     const canvas = document.getElementById('backgroundCanvas');
     const ctx = canvas.getContext('2d');
     let width, height;
@@ -210,6 +205,7 @@
       canvas.width = width;
       canvas.height = height;
     }
+
     window.addEventListener('resize', resize);
     resize();
 
@@ -233,18 +229,18 @@
         ctx.rotate(this.rotation);
         ctx.fillStyle = this.color;
         switch (this.type) {
-          case 0: // Círculo
+          case 0:
             ctx.beginPath();
             ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
             ctx.fill(); break;
-          case 1: // Triángulo
+          case 1:
             ctx.beginPath();
             ctx.moveTo(0, -this.size / 1.5);
             ctx.lineTo(this.size / 1.3, this.size / 2);
             ctx.lineTo(-this.size / 1.3, this.size / 2);
             ctx.closePath();
             ctx.fill(); break;
-          case 2: // Rectángulo redondeado
+          case 2:
             const r = this.size / 5;
             ctx.beginPath();
             ctx.moveTo(-this.size / 2 + r, -this.size / 2);
