@@ -15,22 +15,62 @@
       z-index: 1;
     }
 
-    nav {
+    /* ==== MENÚ DESPLEGABLE ==== */
+    nav.menu-desplegable {
       background-color: #333;
-      padding: 1em;
+      padding: 0.5em 1em;
+      display: flex;
+      justify-content: flex-start;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    .dropdown {
       position: relative;
-      z-index: 10;
     }
 
-    nav a {
+    .dropbtn {
+      background-color: #333;
       color: white;
-      margin-right: 15px;
-      text-decoration: none;
+      padding: 10px 18px;
+      font-size: 1rem;
+      border: none;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background-color 0.3s;
     }
 
-    nav a:hover {
-      text-decoration: underline;
-      color: #1c80c8;
+    .dropbtn:hover {
+      background-color: #1c80c8;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #444;
+      min-width: 200px;
+      margin-top: 5px;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.25);
+      z-index: 1000;
+    }
+
+    .dropdown-content a {
+      color: white;
+      padding: 12px 16px;
+      text-decoration: none;
+      display: block;
+    }
+
+    .dropdown-content a:hover {
+      background-color: #1c80c8;
+    }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
     }
 
     .container {
@@ -169,30 +209,33 @@
       }
 
       td:nth-of-type(6)::before {
-        content: "Precio";
+        content: "Precio Compra";
       }
 
       td:nth-of-type(7)::before {
-        content: "Ubicación";
+        content: "Precio Venta";
       }
 
       td:nth-of-type(8)::before {
-        content: "Fecha Ingreso";
+        content: "Ubicación";
       }
 
       td:nth-of-type(9)::before {
+        content: "Fecha Ingreso";
+      }
+
+      td:nth-of-type(10)::before {
         content: "Categoría";
       }
     }
 
-    /* Fondo animado */
     #backgroundCanvas {
       position: fixed;
       top: 0;
       left: 0;
       width: 100vw;
       height: 100vh;
-      z-index: 0; /* detrás de todo */
+      z-index: 0;
       pointer-events: none;
       background: linear-gradient(135deg, #e0f7e9, #b2d8b2);
     }
@@ -201,18 +244,25 @@
 
 <body>
 
-  <nav>
-    <a href="Dashboard.html">Inicio</a>
-    <a href="Clientes.html">Clientes</a>
-    <a href="Productos.html">Productos</a>
-    <a href="Ventas.html">Ventas</a>
-    <a href="Registrar_Entrada.html">Registrar Entrada</a>
-    <a href="Proveedores.html">Proveedores</a>
-    <a href="Salidas.html">Salidas</a>
-    <a href="Movimientos.html">Movimientos</a>
-    <a href="Login.html" id="logoutLink">Cerrar sesión</a>
+  <!-- MENÚ DESPLEGABLE -->
+  <nav class="menu-desplegable">
+    <div class="dropdown">
+      <button class="dropbtn">☰ Menú</button>
+      <div class="dropdown-content">
+        <a href="Dashboard.html">Inicio</a>
+        <a href="Clientes.html">Clientes</a>
+        <a href="Productos.html">Productos</a>
+        <a href="Ventas.html">Ventas</a>
+        <a href="Registrar_Entrada.html">Registrar Entrada</a>
+        <a href="Proveedores.html">Proveedores</a>
+        <a href="Salidas.html">Salidas</a>
+        <a href="Movimientos.html">Movimientos</a>
+        <a href="Login.html" id="logoutLink">Cerrar sesión</a>
+      </div>
+    </div>
   </nav>
 
+  <!-- CONTENIDO -->
   <div class="container">
     <div class="encabezado">
       <h1>Lista de Productos</h1>
@@ -234,21 +284,71 @@
           <th>Categoría</th>
         </tr>
       </thead>
-      <tbody id="productosBody">
-        <!-- Los productos se cargan con JS -->
-      </tbody>
+      <tbody id="productosBody"></tbody>
     </table>
   </div>
 
+  <!-- BOTONES -->
   <div class="botonesDiv">
-    <button class="butons" id="Add">Modificar Cantidad</button>
+    <button class="butons" id="toggleEditMode">Modificar Cantidad</button>
+    <button class="butons" id="saveChanges" style="display: none;">Guardar Cambios</button>
   </div>
 
+  <!-- CANVAS ANIMADO -->
   <canvas id="backgroundCanvas"></canvas>
 
+  <!-- SCRIPT -->
   <script>
-    document.getElementById('Add').addEventListener('click', () => {
-      window.location.href = 'AgregarProducto.html';
+    const toggleEditModeButton = document.getElementById('toggleEditMode');
+    const saveChangesButton = document.getElementById('saveChanges');
+    const tbody = document.getElementById('productosBody');
+    const filtroInput = document.getElementById('filtroNombre');
+    let productos = [];
+    let isEditing = false;
+
+    toggleEditModeButton.addEventListener('click', () => {
+      isEditing = !isEditing;
+      toggleEditModeButton.textContent = isEditing ? 'Cancelar Edición' : 'Modificar Cantidad';
+      saveChangesButton.style.display = isEditing ? 'block' : 'none';
+      mostrarProductos(productos);
+    });
+
+    saveChangesButton.addEventListener('click', async () => {
+      const updatedProducts = [];
+      tbody.querySelectorAll('tr').forEach(row => {
+        const productId = row.dataset.productId;
+        const quantityInput = row.querySelector('input[data-field="cantidad"]');
+        if (productId && quantityInput) {
+          updatedProducts.push({
+            id: productId,
+            cantidad: parseInt(quantityInput.value, 10)
+          });
+        }
+      });
+
+      try {
+        for (const product of updatedProducts) {
+          const response = await fetch(`http://localhost:3000/productos/actualizar-cantidad`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              producto_id: product.id,
+              cantidad: product.cantidad,
+              jefe_id: jefeId
+            }),
+          });
+          if (!response.ok) {
+            throw new Error(`Error al actualizar producto ${product.id}`);
+          }
+        }
+        isEditing = false;
+        toggleEditModeButton.textContent = 'Modificar Cantidad';
+        saveChangesButton.style.display = 'none';
+        cargarProductos();
+      } catch (error) {
+        console.error('❌ Error al guardar cambios:', error);
+        alert('Hubo un error al guardar los cambios.');
+      }
     });
 
     const jefeId = localStorage.getItem('jefe_id');
@@ -257,13 +357,8 @@
       alert('No hay sesión iniciada. Por favor, inicia sesión.');
       window.location.href = 'Login.html';
     } else {
-      console.log('🔍 Cargando productos para jefe_id:', jefeId);
       cargarProductos();
     }
-
-    const tbody = document.getElementById('productosBody');
-    const filtroInput = document.getElementById('filtroNombre');
-    let productos = [];
 
     function cargarProductos() {
       fetch(`http://localhost:3000/productos?jefe_id=${jefeId}`)
@@ -285,12 +380,13 @@
       tbody.innerHTML = '';
       filtrados.forEach(producto => {
         const tr = document.createElement('tr');
+        tr.dataset.productId = producto.id;
         tr.innerHTML = `
           <td>${producto.nombre}</td>
           <td>${producto.descripcion}</td>
           <td>${producto.modelo}</td>
           <td>${producto.marca}</td>
-          <td>${producto.cantidad}</td>
+          <td>${isEditing ? `<input type="number" value="${producto.cantidad}" data-field="cantidad" style="width: 80px;">` : producto.cantidad}</td>
           <td>${producto.precio_compra}</td>
           <td>${producto.precio_venta}</td>
           <td>${producto.ubicacion}</td>
@@ -322,9 +418,7 @@
     resize();
 
     class Particle {
-      constructor() {
-        this.reset();
-      }
+      constructor() { this.reset(); }
       reset() {
         this.x = Math.random() * width;
         this.y = Math.random() * height;
@@ -336,36 +430,25 @@
       update() {
         this.x += this.speedX;
         this.y += this.speedY;
-
         if (this.x < 0 || this.x > width) this.speedX *= -1;
         if (this.y < 0 || this.y > height) this.speedY *= -1;
       }
       draw(ctx) {
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
-        ctx.fillStyle = `rgba(76, 175, 80, ${this.alpha})`; // verde suave
+        ctx.fillStyle = `rgba(76, 175, 80, ${this.alpha})`;
         ctx.fill();
       }
     }
 
-    const particles = [];
-    const maxParticles = 100;
-
-    for (let i = 0; i < maxParticles; i++) {
-      particles.push(new Particle());
-    }
+    const particles = Array.from({ length: 100 }, () => new Particle());
 
     function animate() {
       ctx.clearRect(0, 0, width, height);
-
-      // Dibujar líneas entre partículas cercanas
-      for (let i = 0; i < maxParticles; i++) {
-        const p1 = particles[i];
+      particles.forEach(p1 => {
         p1.update();
         p1.draw(ctx);
-
-        for (let j = i + 1; j < maxParticles; j++) {
-          const p2 = particles[j];
+        particles.forEach(p2 => {
           const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
           if (dist < 120) {
             ctx.strokeStyle = `rgba(76, 175, 80, ${(120 - dist) / 300})`;
@@ -375,9 +458,8 @@
             ctx.lineTo(p2.x, p2.y);
             ctx.stroke();
           }
-        }
-      }
-
+        });
+      });
       requestAnimationFrame(animate);
     }
 
